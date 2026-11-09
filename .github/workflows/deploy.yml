@@ -6,7 +6,7 @@
 # 비밀값
 #   저장소 Secrets : PROD_SUPABASE_URL, PROD_SUPABASE_ANON_KEY, STAGING_SUPABASE_URL, STAGING_SUPABASE_ANON_KEY (anon 키는 공개용)
 #   Environment    : staging / production 각각에 SUPABASE_DB_URL (DB 직접 접속, 민감 — 마이그레이션 잡에서만 사용)
-#   Environment    : production 에 Required reviewers, github-pages 는 보호 규칙 없음
+#   Environment    : production 에 Required reviewers + 허용 규칙(Tag / v*), github-pages 에도 허용 규칙(Tag / v*) 추가
 name: deploy
 on:
   push:

@@ -68,6 +68,6 @@
 1. Supabase 프로젝트 2개(staging, production) 생성, 각각 `db/migrations/001_init.sql` 은 첫 배포가 적용(수동 실행 불필요)
 2. 저장소 Secrets 4종 + 각 Environment 에 `SUPABASE_DB_URL`
 3. Settings > Pages > Source: GitHub Actions
-4. Environments: `production`(Required reviewers, 태그 제한), `staging`, `github-pages`(규칙 없음)
+4. Environments: `production`(Required reviewers, 허용 규칙 = Ref type **Tag** / 패턴 `v*`), `staging`, `github-pages`(기본값이 main 브랜치만 허용하므로 **Tag / `v*` 규칙을 추가**해야 태그 배포가 통과)
 5. 브랜치 보호 규칙, 첫 태그 `v0.1.0`
 6. (선택) Hostinger VPS: Docker 설치 후 `deploy/docker-compose.yml` 의 이미지 경로 수정
