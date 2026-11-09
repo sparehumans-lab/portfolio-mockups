@@ -43,7 +43,7 @@
 - `db/schema.sql`·`001_init.sql` 은 `tools/gen_schema.py` 생성물. 정의를 바꾸면 생성 후 커밋(CI 가 드리프트를 검사).
 
 ## 5. 되돌리기(롤백)
-- 코드: Actions > deploy > Run workflow, `ref` 에 직전 정상 태그, `environment=production`. 해당 태그를 다시 빌드·배포하고 마이그레이션은 이미 적용돼 건너뜀.
+- 코드: Actions > deploy > Run workflow. **"Use workflow from" 드롭다운에서 Tags 탭의 직전 정상 태그를 선택**하고, `ref` 입력란에는 `v1.1.0` 처럼 태그 이름만, `environment` 는 드롭다운에서 `production`. (Use workflow from 을 main 으로 두면 production 환경의 태그 제한 규칙에 막힘.) 해당 태그를 다시 빌드·배포하고 마이그레이션은 이미 적용돼 건너뜀.
 - 컨테이너: 서버에서 `IMAGE_TAG=v1.1.0 docker compose up -d`.
 - DB: 되돌리지 않는다. 4번 규칙(expand/contract)으로 이전 코드가 새 스키마에서도 동작하게 유지. 데이터 손상 시 Supabase 백업 복원(무료 플랜의 백업 제공 범위는 가입 시점에 확인).
 - 판단 기준: 배포 후 점검 실패 또는 화면 핵심 흐름 오류 → 즉시 직전 태그로 되돌리고 원인은 이후에 분석.
