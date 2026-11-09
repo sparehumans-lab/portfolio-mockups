@@ -1,0 +1,18 @@
+const {chromium}=require('playwright');
+const bad=[];const _l=console.log;console.log=(...a)=>{_l(...a);if(a.some(x=>x===false))bad.push(String(a[0]))};
+(async()=>{const b=await chromium.launch();const p=await b.newPage();const errs=[];
+p.on('pageerror',e=>errs.push(e.message));
+await p.goto('file://'+process.argv[2]);await p.waitForTimeout(300);
+const txt=async()=>await p.textContent('#app');
+await p.fill('#f-size','40');await p.fill('#f-date','11/20 오전');await p.click('[data-act=submitq]');
+console.log('quote added:',(await txt()).includes('Q-204'));
+await p.click('[data-act=role][data-r=biz]');
+await p.locator('[data-act=join]:not([disabled])').first().click();
+console.log('joined:',(await txt()).includes('참여함'));
+await p.fill('#j-title','신축 현장 청소');await p.fill('#j-when','11/18 08:00');await p.fill('#j-pay','일 14만원');await p.click('[data-act=postjob]');
+console.log('job posted:',(await txt()).includes('신축 현장 청소'));
+await p.click('[data-act=role][data-r=work]');await p.locator('[data-act=apply]').first().click();
+console.log('applied:',(await txt()).includes('지원 완료'));
+await p.click('[data-act=role][data-r=admin]');await p.selectOption('select[data-act=result]','계약 완료');
+await p.click('[data-act=approve]');console.log('approved:',(await txt()).includes('승인 대기 중인 업체가 없습니다'));
+console.log('errors:',errs);await b.close();if(errs.length||bad.length){console.error('FAIL',errs,bad);process.exit(1)}})();

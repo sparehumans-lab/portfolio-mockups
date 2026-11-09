@@ -1,0 +1,297 @@
+<title>진단·자문 샘플 문서</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: 문서형 한 열. 상단 3개 탭(진단 보고서 / RFP 검수 / 개발사 비교), 각 탭은 값을 바꾸면 합계와 순위가 즉시 바뀐다. */
+:root{
+  --bg:#f4f5f7; --surface:#ffffff; --fg:#1b2230; --muted:#5b6475; --line:#d9dde5;
+  --accent:#27508f; --accent-fg:#ffffff; --accent-soft:#e0e9f7;
+  --crit:#a3262a; --crit-soft:#f9dfe0; --high:#a85a00; --high-soft:#fbe8cf; --mid:#6d6a00; --mid-soft:#f1efc4; --low:#36685a; --low-soft:#dcefe8;
+  --font-display:'Noto Serif KR',serif; --font-body:'Noto Sans KR',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161f; --surface:#1a202c; --fg:#e8ecf4; --muted:#9ba5b8; --line:#2d3546;
+  --accent:#8db3ee; --accent-fg:#0c1a33; --accent-soft:#1f2f4d;
+  --crit:#f19a9d; --crit-soft:#40201f; --high:#f2b36a; --high-soft:#3b2a12; --mid:#e0dc7a; --mid-soft:#383710; --low:#7fd1b8; --low-soft:#183a30; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161f; --surface:#1a202c; --fg:#e8ecf4; --muted:#9ba5b8; --line:#2d3546;
+  --accent:#8db3ee; --accent-fg:#0c1a33; --accent-soft:#1f2f4d;
+  --crit:#f19a9d; --crit-soft:#40201f; --high:#f2b36a; --high-soft:#3b2a12; --mid:#e0dc7a; --mid-soft:#383710; --low:#7fd1b8; --low-soft:#183a30; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.65;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 56px}
+.wrap{max-width:900px;margin:0 auto}
+.notice{background:var(--high-soft);color:var(--high);border-radius:6px;padding:8px 12px;margin-top:16px;font-size:13px}
+h1{font-family:var(--font-display);font-size:28px;line-height:1.3;margin:24px 0 4px;text-wrap:balance}
+h2{font-family:var(--font-display);font-size:20px;margin:28px 0 8px;text-wrap:balance}
+.lede{color:var(--muted);margin:0 0 8px}
+.docmeta{display:flex;flex-wrap:wrap;gap:6px 20px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px 0;margin:12px 0}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:20px 0 4px}
+.tabs button{border:0;background:transparent;color:var(--muted);padding:10px 14px;font:inherit;cursor:pointer;border-bottom:2px solid transparent}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:99px;padding:5px 14px;font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.sev{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px}
+.sev.crit{background:var(--crit-soft);color:var(--crit)} .sev.high{background:var(--high-soft);color:var(--high)} .sev.mid{background:var(--mid-soft);color:var(--mid)} .sev.low{background:var(--low-soft);color:var(--low)}
+.finding{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;min-width:0}
+.finding header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:4px}
+.finding h3{font-size:15px;margin:0;flex:1 1 220px}
+.finding dl{display:grid;grid-template-columns:70px 1fr;gap:4px 12px;margin:8px 0 0;font-size:14px}
+.finding dt{color:var(--muted)} .finding dd{margin:0}
+.inc{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-top:8px}
+.sum{background:var(--accent-soft);border-radius:10px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:12px 32px;margin:16px 0}
+.sum b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.sum span{font-size:12px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.check{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}
+.check:last-child{border-bottom:0}
+.check input{margin-top:5px}
+.check small{display:block;color:var(--muted)}
+.bar{height:10px;background:var(--accent-soft);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:14px;vertical-align:middle}
+th{font-size:12px;color:var(--muted);font-weight:500}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+.sl{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) 42px;gap:10px;align-items:center;padding:6px 0}
+.sl input{width:100%}
+.rank{display:grid;gap:8px;margin-top:8px}
+.rank .r{display:grid;grid-template-columns:28px minmax(0,150px) minmax(0,1fr) 56px;gap:10px;align-items:center}
+.small{font-size:12px;color:var(--muted)}
+.foot{margin-top:28px;border-top:1px solid var(--line);padding-top:12px;color:var(--muted);font-size:13px}
+@media (max-width:520px){.rank .r{grid-template-columns:24px minmax(0,1fr) 48px}.rank .r .bar{grid-column:1/-1}.sl{grid-template-columns:1fr 36px}.sl input{grid-column:1/-1;grid-row:2}}
+</style>
+
+<div class="wrap">
+  <div class="notice" role="note">샘플 문서입니다. 가상 사례(어린이 용돈관리 앱 '새싹페이')와 가상 업체로 작성한 포트폴리오용 예시이며 실제 고객사 자료가 아닙니다.</div>
+  <h1>상용 앱 진단 및 개발 발주 자문 샘플</h1>
+  <p class="lede">진단 보고서가 어떤 모양인지, 발주 전 RFP를 어떻게 검수하고 개발사를 어떻게 비교하는지를 직접 만져볼 수 있게 만든 예시입니다.</p>
+  <div class="docmeta"><span>대상: 새싹페이 (가상)</span><span>진단 범위: 보안 · 결제 · 데이터 정합성 · UX · 인프라</span><span>작성: 기획·검수 담당</span></div>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="t-diag" data-t="diag" aria-selected="true">진단 보고서</button>
+    <button role="tab" id="t-rfp" data-t="rfp" aria-selected="false">RFP 검수</button>
+    <button role="tab" id="t-cmp" data-t="cmp" aria-selected="false">개발사 비교</button>
+  </div>
+  <main id="app"></main>
+  <div class="foot">이 문서의 점수, 금액, 인일 수는 모두 예시입니다. 실제 진단에서는 소스·로그·운영 환경을 확인한 근거를 항목마다 첨부합니다.</div>
+</div>
+
+<script>
+window.APP_CONFIG={"url": "https://YOUR-PROJECT-REF.supabase.co", "anonKey": "YOUR-ANON-PUBLIC-KEY"};window.APP_VERSION="dev-HEAD";
+
+/* ===== repo.js — 데이터 계층 (UI와 분리) =====
+ * 화면 코드는 Repo 의 list/get/create/update/remove 만 호출합니다.
+ * 저장소는 adapter 로 교체합니다.
+ *   memory   : 가상 데이터(새로고침하면 초기화). DB 설정이 없거나 연결 실패 시 자동 폴백
+ *   supabase : Supabase REST(PostgREST). config.json 의 url/anonKey 가 있을 때 사용
+ * adapter 규약: load(col)->Promise<doc[]>, save(col,id,doc), drop(col,id), clear(col)
+ */
+var Repo=(function(){
+  var COLMAP={when:'when_at'};            /* SQL 예약어 회피: JS 필드 -> DB 컬럼 */
+  var COLREV={when_at:'when'};
+  function snake(k){return k.replace(/[A-Z]/g,function(m){return '_'+m.toLowerCase()})}
+  function camel(k){return k.replace(/_([a-z])/g,function(_,c){return c.toUpperCase()})}
+  function colName(k){return COLMAP[k]||snake(k)}
+  function fieldName(c){return COLREV[c]||camel(c)}
+
+  function memoryAdapter(){
+    var mem={};
+    return {name:'memory',
+      load:function(col){return Promise.resolve((mem[col]||[]).slice())},
+      save:function(col,id,doc){(mem[col]=mem[col]||[]);var i=mem[col].findIndex(function(d){return d.id===id});if(i<0)mem[col].push(doc);else mem[col][i]=doc;return Promise.resolve()},
+      drop:function(col,id){mem[col]=(mem[col]||[]).filter(function(d){return d.id!==id});return Promise.resolve()},
+      clear:function(col){mem[col]=[];return Promise.resolve()}};
+  }
+
+  function supabaseAdapter(cfg,ns){
+    var base=String(cfg.url).replace(/\/$/,'')+'/rest/v1/';
+    var H={apikey:cfg.anonKey,Authorization:'Bearer '+cfg.anonKey,'Content-Type':'application/json'};
+    function tbl(col){return ns+'_'+snake(col)}
+    function toRow(doc){var r={};Object.keys(doc).forEach(function(k){r[colName(k)]=doc[k]});return r}
+    function fromRow(row){var d={};Object.keys(row).forEach(function(c){d[fieldName(c)]=row[c]});return d}
+    function check(res){if(!res.ok)return res.text().then(function(t){throw new Error('HTTP '+res.status+' '+t.slice(0,200))});return res}
+    function ctl(){var c=new AbortController();setTimeout(function(){c.abort()},10000);return c.signal}
+    return {name:'supabase',
+      load:function(col){return fetch(base+tbl(col)+'?select=*&limit=1000',{headers:H,signal:ctl()}).then(check).then(function(r){return r.json()}).then(function(rows){return rows.map(fromRow)})},
+      save:function(col,id,doc){return fetch(base+tbl(col)+'?on_conflict=id',{method:'POST',headers:Object.assign({Prefer:'resolution=merge-duplicates,return=minimal'},H),body:JSON.stringify(toRow(doc)),signal:ctl()}).then(check)},
+      drop:function(col,id){return fetch(base+tbl(col)+'?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:H,signal:ctl()}).then(check)},
+      clear:function(col){return fetch(base+tbl(col)+'?id=not.is.null',{method:'DELETE',headers:H,signal:ctl()}).then(check)}};
+  }
+
+  /* 설정(config.json -> window.APP_CONFIG)이 있으면 Supabase, 없으면 메모리 */
+  function fromConfig(ns){
+    var c=(typeof window!=='undefined'&&window.APP_CONFIG)||{};
+    if(c.url&&c.anonKey&&String(c.url).indexOf('YOUR-')<0)return supabaseAdapter(c,ns);
+    return memoryAdapter();
+  }
+
+  function make(adapter,seed){
+    var cache={},seq={},q=Promise.resolve(),fails=0;
+    function now(){return new Date().toISOString()}
+    function persist(fn){q=q.then(fn).catch(function(e){fails++;console.warn('persist failed',e);if(api.onError)api.onError(e)});return q} /* 쓰기를 순서대로 */
+    function nextId(col,prefix,start){seq[col]=Math.max(seq[col]||start,start);
+      var max=(cache[col]||[]).reduce(function(m,d){var n=parseInt(String(d.id).replace(/\D/g,''),10);return n>m?n:m},0);
+      if(max>=seq[col])seq[col]=max+1;
+      var id=prefix+(seq[col]++);
+      if(adapter.name==='supabase')id+='-'+Math.random().toString(36).slice(2,6); /* 동시 방문자 충돌 방지 */
+      return id}
+    function seedAll(){
+      var s=seed();return Promise.all(Object.keys(s).map(function(col){
+        cache[col]=s[col].map(function(d){return Object.assign({createdAt:now(),updatedAt:now()},d)});
+        return Promise.all(cache[col].map(function(d){return adapter.save(col,d.id,d)}))}))}
+    var api={
+      mode:adapter.name,onError:null,
+      init:function(cols){
+        return Promise.all(cols.map(function(col){return adapter.load(col).then(function(rows){cache[col]=rows})}))
+        .then(function(){var empty=cols.every(function(c){return !cache[c].length});if(empty&&seed)return seedAll()})
+        .catch(function(e){ /* DB 연결 실패 -> 메모리로 폴백 */
+          if(adapter.name==='memory')throw e;
+          console.warn('DB 연결 실패, 메모리 모드로 전환',e);
+          adapter=memoryAdapter();api.mode='memory';api.fallback=String(e.message||e);cache={};
+          return api.init(cols)});
+      },
+      /* 모든 컬렉션을 비우고 시드를 다시 넣습니다 */
+      reset:function(cols){
+        return q.then(function(){return Promise.all(cols.map(function(c){return adapter.clear(c)}))}).then(function(){cache={};return seedAll()});
+      },
+      list:function(col,filter){var r=(cache[col]||[]);return (filter?r.filter(filter):r).slice()},
+      get:function(col,id){return (cache[col]||[]).filter(function(d){return d.id===id})[0]||null},
+      create:function(col,doc,prefix,start){var d=Object.assign({},doc);d.id=d.id||nextId(col,prefix||col[0]+'-',start||1);d.createdAt=d.updatedAt=now();(cache[col]=cache[col]||[]).push(d);persist(function(){return adapter.save(col,d.id,d)});return d},
+      update:function(col,id,patch){var d=api.get(col,id);if(!d)return null;Object.assign(d,patch,{updatedAt:now()});persist(function(){return adapter.save(col,id,d)});return d},
+      remove:function(col,id){cache[col]=(cache[col]||[]).filter(function(d){return d.id!==id});persist(function(){return adapter.drop(col,id)})}
+    };
+    return api;
+  }
+
+  /* 화면 하단의 저장소 상태 표시줄 + 데이터 초기화 버튼 */
+  function mountStatus(repo,cols,rerender){
+    var bar=document.createElement('div');
+    bar.setAttribute('role','status');
+    bar.style.cssText='margin:24px auto 0;padding:10px max(16px,env(safe-area-inset-left,0px));display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;font-size:12px;color:var(--muted,#666);border-top:1px solid var(--line,#ddd)';
+    var txt=document.createElement('span');
+    var ver=(typeof window!=='undefined'&&window.APP_VERSION)?' · '+window.APP_VERSION:'';
+    txt.textContent=(repo.mode==='supabase'?'저장소: Supabase DB 연결됨 (방문자 공용 데이터)':'저장소: 브라우저 메모리 (가상 데이터, 새로고침하면 초기화)'+(repo.fallback?' · DB 연결 실패로 전환됨':''))+ver;
+    var b=document.createElement('button');b.type='button';b.textContent='데이터 초기화';
+    b.style.cssText='font:inherit;padding:4px 10px;border:1px solid var(--line,#ccc);border-radius:6px;background:var(--surface,transparent);color:var(--fg,inherit);cursor:pointer';
+    b.onclick=function(){b.disabled=true;b.textContent='초기화 중…';repo.reset(cols).then(function(){b.disabled=false;b.textContent='데이터 초기화';rerender()}).catch(function(e){b.disabled=false;b.textContent='초기화 실패';console.warn(e)})};
+    bar.appendChild(txt);bar.appendChild(b);document.body.appendChild(bar);
+  }
+  return {memoryAdapter:memoryAdapter,supabaseAdapter:supabaseAdapter,fromConfig:fromConfig,make:make,mountStatus:mountStatus,_map:{colName:colName,fieldName:fieldName,snake:snake}};
+})();
+
+/* ===== f-data.js — 스키마 + 가상 시드 =====
+ *  findings   {id,sev,area,title,evidence,fix,manDays,included}
+ *  rfpItems   {id,label,hint,checked,pos}
+ *  vendors    {id,name,price(백만원),scores{tech,ref,price,sched,mnt}}
+ *  criteria   {id,label,weight,pos}
+ *  settings   {id:'rate', value(인일 단가)}
+ */
+var COLS=['findings','rfpItems','vendors','criteria','settings'];
+var SEV={crit:'치명',high:'높음',mid:'보통',low:'낮음'};
+var F=[
+ {id:'F-01',sev:'crit',area:'보안',t:'자녀 계정이 다른 가정의 정산 내역을 조회할 수 있음',ev:'API가 가정 ID를 요청 값으로 받고 서버에서 소속 확인을 하지 않음',fix:'서버에서 로그인 사용자의 가정 소속을 검증하고 조회 범위를 제한',md:3,inc:true},
+ {id:'F-02',sev:'crit',area:'결제',t:'결제 웹훅이 중복 도착하면 포인트가 두 번 지급됨',ev:'결제 완료 이벤트의 고유 번호를 저장하지 않아 재처리를 막지 못함',fix:'이벤트 고유 번호 저장 후 멱등 처리, 재처리 테스트 추가',md:2.5,inc:true},
+ {id:'F-03',sev:'high',area:'데이터 정합성',t:'동시에 용돈을 보내면 잔액이 어긋남',ev:'잔액을 읽고 계산한 뒤 쓰는 방식이라 같은 순간의 요청이 서로 덮어씀',fix:'DB 트랜잭션과 잠금으로 잔액 갱신을 한 번에 처리',md:3,inc:true},
+ {id:'F-04',sev:'high',area:'보안',t:'아동 가입 시 부모 동의 기록이 남지 않음',ev:'동의 화면은 있으나 동의 시각과 버전이 저장되지 않음',fix:'동의 이력 테이블 추가, 약관 버전 관리, 탈퇴 시 보존 규칙 정의',md:2,inc:true},
+ {id:'F-05',sev:'mid',area:'인프라',t:'오류 로그와 알림이 없어 장애를 사용자 문의로 알게 됨',ev:'운영 환경에 오류 수집과 알림 설정이 없음',fix:'오류 수집 도구 연결, 결제 실패와 서버 오류 알림 규칙 설정',md:1.5,inc:false},
+ {id:'F-06',sev:'mid',area:'UX',t:'미리쓰기와 상환 용어를 아이와 부모가 다르게 이해함',ev:'화면 문구가 금융 용어 중심이고 상환 시점 안내가 없음',fix:'쉬운 문구로 교체하고 상환 일정 안내 화면 추가',md:2,inc:false},
+ {id:'F-07',sev:'low',area:'UX',t:'온보딩 3단계에서 이탈 구간이 길음',ev:'프로필 사진 업로드가 필수 입력으로 되어 있음',fix:'선택 입력으로 변경하고 나중에 입력 유도',md:0.5,inc:false},
+ {id:'F-08',sev:'low',area:'인프라',t:'백업 복구 절차가 문서화되어 있지 않음',ev:'백업은 있으나 복구 시험 기록이 없음',fix:'복구 절차서 작성과 1회 복구 시험',md:1,inc:false}
+];
+var VEND=[
+ {n:'A사 (소형 스튜디오)',s:{tech:4,ref:3,price:5,sched:4,mnt:3},price:42},
+ {n:'B사 (중견 SI)',s:{tech:4,ref:5,price:2,sched:3,mnt:5},price:96},
+ {n:'C사 (프리랜서 팀)',s:{tech:3,ref:2,price:5,sched:5,mnt:2},price:35},
+ {n:'D사 (솔루션 전문)',s:{tech:5,ref:4,price:3,sched:3,mnt:4},price:68}
+];
+var CRIT=[['tech','기술 적합성'],['ref','유사 실적'],['price','견적 적정성'],['sched','일정 현실성'],['mnt','유지보수 체계']];
+var RFP=[
+ ['목적과 성공 기준이 숫자로 적혀 있는가','예: 결제 실패율, 처리 시간, 오픈 날짜',true],
+ ['사용자 역할과 권한이 구분되어 있는가','고객사 담당자, 심사원, 운영자 등',true],
+ ['업무 흐름이 순서대로 설명되어 있는가','신청부터 종료까지 한 줄로 이어지는지',true],
+ ['이번 범위와 제외 범위가 분리되어 있는가','제외 항목이 없으면 견적이 서로 달라집니다',false],
+ ['기존 시스템과 데이터 이관 범위가 있는가','이관 대상과 건수, 정합성 확인 방법',false],
+ ['외부 연동 대상이 구체적인가','인증, 결제, 알림, 공공 시스템',true],
+ ['보안과 개인정보 요구가 있는가','접근 통제, 암호화, 보존 기간',false],
+ ['AI 적용 범위와 검증 방법이 있는가','오답 처리, 사람 검토 단계, 책임 소재',false],
+ ['검수 기준과 하자보수 조건이 있는가','요구사항별 시험 결과를 증빙으로 받을지',false],
+ ['평가 기준과 가중치가 공개되어 있는가','개발사가 무엇을 근거로 제안할지 알 수 있어야 합니다',false]
+];
+
+var WEIGHTS={tech:25,ref:25,price:20,sched:15,mnt:15};
+function seedData(){
+  return {
+    findings:F.map(function(f){return {id:f.id,sev:f.sev,area:f.area,title:f.t,evidence:f.ev,fix:f.fix,manDays:f.md,included:f.inc}}),
+    rfpItems:RFP.map(function(r,i){return {id:'r'+(i+1),label:r[0],hint:r[1],checked:r[2],pos:i}}),
+    vendors:VEND.map(function(v,i){return {id:'v'+(i+1),name:v.n,price:v.price,scores:v.s}}),
+    criteria:CRIT.map(function(c,i){return {id:c[0],label:c[1],weight:WEIGHTS[c[0]],pos:i}}),
+    settings:[{id:'rate',value:450000}]
+  };
+}
+
+(function(){
+var $=function(s){return document.querySelector(s)};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var won=function(n){return n.toLocaleString('ko-KR')+'원'};
+var repo=Repo.make(Repo.fromConfig('f'),seedData);
+var S={tab:'diag',filter:'all'};
+function RATE(){return repo.get('settings','rate').value}
+function findings(){return repo.list('findings')}
+function rfpItems(){return repo.list('rfpItems').sort(function(a,b){return a.pos-b.pos})}
+function criteria(){return repo.list('criteria').sort(function(a,b){return a.pos-b.pos})}
+function vendors(){return repo.list('vendors')}
+function diag(){
+  var FS=findings(),list=FS.filter(function(f){return S.filter==='all'||f.sev===S.filter});
+  var sel=FS.filter(function(f){return f.included}),md=sel.reduce(function(a,f){return a+f.manDays},0);
+  var cnt={crit:0,high:0,mid:0,low:0};FS.forEach(function(f){cnt[f.sev]++});
+  var h='<h2>1. 요약</h2><p>'+FS.length+'건의 문제를 위험도로 나눴습니다. 치명과 높음 항목은 출시 전에 먼저 고치는 것을 권합니다. 체크한 항목만 2단계 개선 견적에 포함됩니다.</p>';
+  h+='<div class="chips" role="group" aria-label="위험도 필터"><button class="chip" data-act="f" data-v="all" aria-pressed="'+(S.filter==='all')+'">전체 '+FS.length+'</button>'+Object.keys(SEV).map(function(k){return '<button class="chip" data-act="f" data-v="'+k+'" aria-pressed="'+(S.filter===k)+'">'+SEV[k]+' '+cnt[k]+'</button>'}).join('')+'</div>';
+  h+='<div class="sum" aria-live="polite"><div><b>'+sel.length+'건</b><span>개선 포함 항목</span></div><div><b>'+md+'인일</b><span>예상 공수</span></div><div><b>'+won(md*RATE())+'</b><span>개선 견적 (단가 '+won(RATE())+'/인일, VAT 별도)</span></div></div>';
+  h+='<h2>2. 발견 사항</h2>';
+  h+=list.map(function(f){return '<article class="finding"><header><span class="sev '+f.sev+'">'+SEV[f.sev]+'</span><span class="small">'+f.id+' · '+f.area+'</span><h3>'+esc(f.title)+'</h3></header><dl><dt>근거</dt><dd>'+esc(f.evidence)+'</dd><dt>조치안</dt><dd>'+esc(f.fix)+'</dd><dt>공수</dt><dd>'+f.manDays+'인일 · '+won(f.manDays*RATE())+'</dd></dl><label class="inc"><input type="checkbox" data-act="inc" data-id="'+f.id+'" '+(f.included?'checked':'')+'> 2단계 개선 견적에 포함</label></article>'}).join('');
+  h+='<h2>3. 진단 방법</h2><p>소스 분석, 기능별 시험 시나리오 실행, 권한·결제 예외 상황 재현, 운영 설정 점검 순서로 진행합니다. 항목마다 재현 절차와 화면 또는 로그 근거를 첨부하고, 수정 후에는 같은 절차로 재검증한 결과를 별도 표로 남깁니다.</p>';
+  return h
+}
+function rfp(){
+  var RF=rfpItems(),n=RF.filter(function(x){return x.checked}).length,pct=Math.round(n/RF.length*100);
+  var h='<h2>RFP 초안 검수 체크리스트</h2><p>발주 전에 제안요청서가 개발사를 비교할 수 있는 수준인지 확인하는 표입니다. 항목을 체크하면 완성도가 바뀝니다.</p>';
+  h+='<div class="card" aria-live="polite"><b>완성도 '+pct+'%</b> <span class="small">('+n+' / '+RF.length+' 항목 충족)</span><div class="bar" style="margin-top:8px"><i style="width:'+pct+'%"></i></div></div>';
+  h+='<div class="card" style="margin-top:12px">'+RF.map(function(r){return '<label class="check"><input type="checkbox" data-act="rfp" data-id="'+r.id+'" '+(r.checked?'checked':'')+'><span>'+esc(r.label)+'<small>'+esc(r.hint)+'</small></span></label>'}).join('')+'</div>';
+  var miss=RF.filter(function(r){return !r.checked}).length;
+  h+='<p style="margin-top:12px">'+(miss?'보완이 필요한 항목이 '+miss+'개 남았습니다. 특히 제외 범위와 평가 기준이 비어 있으면 개발사별 견적을 같은 기준으로 비교하기 어렵습니다.':'모든 항목이 채워졌습니다. 이 상태라면 개발사에 공고를 내도 좋습니다.')+'</p>';
+  return h
+}
+function cmp(){
+  var CR=criteria(),VD=vendors(),tot=0;CR.forEach(function(c){tot+=Number(c.weight)});
+  var res=VD.map(function(v){var s=0;CR.forEach(function(c){s+=v.scores[c.id]*Number(c.weight)});return {v:v,sc:tot?s/tot:0}}).sort(function(a,b){return b.sc-a.sc});
+  var prices=VD.map(function(v){return v.price}).sort(function(a,b){return a-b}),med=(prices[1]+prices[2])/2;
+  var h='<h2>개발사 평가 가중치</h2><p>우리 프로젝트에서 무엇이 더 중요한지를 슬라이더로 정하면 순위가 다시 계산됩니다.</p><div class="card">'+CR.map(function(c){return '<div class="sl"><label for="w-'+c.id+'">'+c.label+'</label><input id="w-'+c.id+'" type="range" min="0" max="50" step="5" data-w="'+c.id+'" value="'+c.weight+'"><span class="small">'+c.weight+'</span></div>'}).join('')+'<div class="small">합계 '+tot+' (자동으로 100% 기준으로 환산합니다)</div></div>';
+  h+='<h2>종합 순위</h2><div class="rank" aria-live="polite">'+res.map(function(r,i){return '<div class="r"><b>'+(i+1)+'</b><span>'+esc(r.v.name)+'</span><div class="bar"><i style="width:'+(r.sc/5*100)+'%"></i></div><span class="n" style="font-variant-numeric:tabular-nums">'+r.sc.toFixed(2)+'</span></div>'}).join('')+'</div>';
+  h+='<h2>항목별 점수와 견적</h2><div class="tablewrap"><table><thead><tr><th>개발사</th>'+CR.map(function(c){return '<th class="n">'+c.label+'</th>'}).join('')+'<th class="n">견적(백만원)</th></tr></thead><tbody>'+VD.map(function(v){return '<tr><td>'+esc(v.name)+'</td>'+CR.map(function(c){return '<td class="n">'+v.scores[c.id]+'</td>'}).join('')+'<td class="n">'+v.price+'</td></tr>'}).join('')+'</tbody></table></div>';
+  h+='<p class="small" style="margin-top:8px">견적 중앙값은 '+med+'백만원입니다. 중앙값보다 지나치게 낮은 견적은 범위 누락이나 인력 투입 부족을 먼저 의심해 확인 질문을 보냅니다. 점수는 1(낮음)에서 5(높음)입니다.</p>';
+  return h
+}
+function render(){
+  ['diag','rfp','cmp'].forEach(function(k){$('#t-'+k).setAttribute('aria-selected',S.tab===k)});
+  $('#app').innerHTML={diag:diag,rfp:rfp,cmp:cmp}[S.tab]();
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-t],[data-act]');if(!t)return;
+  if(t.dataset.t){S.tab=t.dataset.t;render();return}
+  var a=t.dataset.act;
+  if(a==='f'){S.filter=t.dataset.v;render()}
+  else if(a==='inc'){repo.update('findings',t.dataset.id,{included:t.checked});render()}
+  else if(a==='rfp'){repo.update('rfpItems',t.dataset.id,{checked:t.checked});render()}
+});
+document.addEventListener('input',function(e){
+  var t=e.target;
+  if(t.dataset.w){repo.update('criteria',t.dataset.w,{weight:Number(t.value)});var id=t.id;render();var n=document.getElementById(id);if(n)n.focus()}
+});
+repo.init(COLS).then(function(){render();Repo.mountStatus(repo,COLS,render)});
+})();
+
+</script>

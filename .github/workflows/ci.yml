@@ -1,0 +1,38 @@
+# CI: PR 과 main 이외 브랜치 push 마다 실행. 통과해야 병합합니다.
+name: ci
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: 스키마 생성물과 저장소가 일치하는지 (드리프트 검사)
+        run: |
+          python3 tools/gen_schema.py
+          git diff --exit-code db/ || { echo "::error::db/ 가 tools/gen_schema.py 결과와 다릅니다. 생성 후 커밋하세요"; exit 1; }
+      - name: 시드 필드 ↔ SQL 컬럼 일치
+        run: node tools/check_cols.js .
+      - name: 마이그레이션 파일 규칙 (번호 순서·중복)
+        run: |
+          ls db/migrations | sort -c
+          test "$(ls db/migrations | cut -c1-3 | sort | uniq -d | wc -l)" = "0"
+      - name: 쉘 스크립트 문법
+        run: bash -n tools/migrate.sh && bash -n tools/smoke.sh
+      - name: 빌드 (메모리 모드)
+        run: python3 build.py --memory --out _e2e
+      - name: E2E (Playwright, 메모리 모드)
+        run: |
+          npm i --no-save playwright
+          npx playwright install --with-deps chromium
+          node tools/e2e/smoke-a.js "$PWD/_e2e/a-booking.html"
+          node tools/e2e/smoke-c.js "$PWD/_e2e/c-matching.html"
+          node tools/e2e/smoke-f.js "$PWD/_e2e/f-samples.html"

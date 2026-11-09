@@ -1,0 +1,132 @@
+# 배포 파이프라인
+#   main 에 병합          -> staging  : 빌드 + E2E + staging DB 마이그레이션 (공개 배포 없음)
+#   v*.*.* 태그 푸시      -> production: 빌드 + E2E → 승인 → DB 마이그레이션 → GitHub Pages 배포 → 배포 후 점검
+#   수동 실행(ref 지정)   -> 이전 태그로 되돌리기(재배포)
+# 승인은 한 번만: DB 마이그레이션 잡(environment=production, Required reviewers)에서 받습니다.
+# 비밀값
+#   저장소 Secrets : PROD_SUPABASE_URL, PROD_SUPABASE_ANON_KEY, STAGING_SUPABASE_URL, STAGING_SUPABASE_ANON_KEY (anon 키는 공개용)
+#   Environment    : staging / production 각각에 SUPABASE_DB_URL (DB 직접 접속, 민감 — 마이그레이션 잡에서만 사용)
+#   Environment    : production 에 Required reviewers, github-pages 는 보호 규칙 없음
+name: deploy
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: '배포할 태그 또는 커밋 (되돌리기: 이전 태그)'
+        required: true
+      environment:
+        description: '대상 환경'
+        required: true
+        default: production
+        type: choice
+        options: [staging, production]
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || (startsWith(github.ref, 'refs/tags/') && 'production' || 'staging') }}
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      env: ${{ steps.p.outputs.env }}
+      ref: ${{ steps.p.outputs.ref }}
+      version: ${{ steps.p.outputs.version }}
+    steps:
+      - id: p
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ENVN="${{ github.event.inputs.environment }}"; REF="${{ github.event.inputs.ref }}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            ENVN=production; REF="${GITHUB_REF#refs/tags/}"
+          else
+            ENVN=staging; REF="${GITHUB_SHA}"
+          fi
+          VER="$REF"; [[ "$VER" == v* ]] || VER="dev-${REF:0:7}"
+          echo "env=$ENVN" >> "$GITHUB_OUTPUT"; echo "ref=$REF" >> "$GITHUB_OUTPUT"; echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "대상: $ENVN / $REF / $VER" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    needs: plan
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ needs.plan.outputs.env == 'production' && secrets.PROD_SUPABASE_URL || secrets.STAGING_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ needs.plan.outputs.env == 'production' && secrets.PROD_SUPABASE_ANON_KEY || secrets.STAGING_SUPABASE_ANON_KEY }}
+      RELEASE_VERSION: ${{ needs.plan.outputs.version }}
+      DEPLOY_ENV: ${{ needs.plan.outputs.env }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: '${{ needs.plan.outputs.ref }}' }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: 검증 (스키마·시드)
+        run: |
+          python3 tools/gen_schema.py && git diff --exit-code db/
+          node tools/check_cols.js .
+      - name: 빌드 (환경별 DB 주입, 버전 표기)
+        run: python3 build.py
+      - name: E2E (빌드 결과물 + 메모리 모드)
+        run: |
+          python3 build.py --memory --out _e2e
+          npm i --no-save playwright && npx playwright install --with-deps chromium
+          node tools/e2e/smoke-a.js "$PWD/_e2e/a-booking.html"
+          node tools/e2e/smoke-c.js "$PWD/_e2e/c-matching.html"
+          node tools/e2e/smoke-f.js "$PWD/_e2e/f-samples.html"
+      - uses: actions/upload-pages-artifact@v3
+        if: needs.plan.outputs.env == 'production'
+        with: { path: docs }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-${{ needs.plan.outputs.version }}
+          path: docs
+          retention-days: 90
+
+  migrate:
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    environment: ${{ needs.plan.outputs.env }}   # production 은 여기서 승인
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: '${{ needs.plan.outputs.ref }}' }
+      - name: DB 마이그레이션 (아직 적용 안 된 파일만, 앞으로만 진행)
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+          tools/migrate.sh
+
+  deploy-production:
+    needs: [plan, migrate]
+    if: needs.plan.outputs.env == 'production'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.d.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - id: d
+        uses: actions/deploy-pages@v4
+
+  verify-production:
+    needs: [plan, deploy-production]
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.PROD_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: '${{ needs.plan.outputs.ref }}' }
+      - name: 배포 후 점검 (페이지 200, 버전 일치, DB 응답)
+        run: |
+          BASE="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}"
+          tools/smoke.sh "$BASE" "${{ needs.plan.outputs.version }}"
+      - name: 실패 시 안내
+        if: failure()
+        run: echo "::error::배포 후 점검 실패. 직전 정상 태그로 deploy 워크플로를 수동 실행해 되돌리세요 (specs/05-deploy-process.md)"

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>윤진성 포트폴리오 · 동작 데모</title>
+<meta name="description" content="위시켓 지원용 동작 프로토타입 3종. 가상 서비스와 가상 데이터로 만든 시연용 데모입니다.">
+<style>
+:root{--bg:#f7f6f2;--fg:#1d2433;--muted:#5d6678;--line:#dcd9cf;--surface:#fff;--accent:#2f5d50;--accent-fg:#fff;--soft:#e6efe9}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#14191f;--fg:#e8ebf0;--muted:#a0a8b6;--line:#2c3440;--surface:#1b222b;--accent:#7fc3ab;--accent-fg:#0f1a16;--soft:#1f2d28;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#14191f;--fg:#e8ebf0;--muted:#a0a8b6;--line:#2c3440;--surface:#1b222b;--accent:#7fc3ab;--accent-fg:#0f1a16;--soft:#1f2d28;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;padding-block:40px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:880px;margin:0 auto}
+h1{font-size:28px;line-height:1.25;margin:0 0 8px;text-wrap:balance}
+.lead{color:var(--muted);margin:0 0 24px;max-width:62ch}
+.notice{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14px;margin-bottom:28px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card h2{font-size:18px;margin:0}
+.tag{font-size:12px;color:var(--muted);letter-spacing:.04em}
+.card p{margin:0;font-size:14px}
+.card ul{margin:0;padding-left:18px;font-size:14px;color:var(--muted)}
+.btn{margin-top:auto;display:inline-block;text-align:center;background:var(--accent);color:var(--accent-fg);text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:600;font-size:14px}
+.btn:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+footer{margin-top:32px;font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+  <h1>동작하는 프로토타입 3종</h1>
+  <p class="lead">위시켓 공고 유형별로 만든 시연용 데모입니다. 화면 조작, 입력 검증, 상태 변화, 데이터 저장(CRUD)까지 실제로 동작합니다.</p>
+  <div class="notice">모든 서비스명·인물·업체·금액은 <b>가상</b>입니다. 결제, 문자, 알림톡 등 외부 연동은 화면 시뮬레이션이며, 실제 개인정보는 입력하지 마세요. 각 화면 하단의 “데이터 초기화”로 처음 상태로 되돌릴 수 있습니다.</div>
+  <div class="grid">
+    <section class="card"><span class="tag">예약 · 결제 · 관리자</span><h2>플리에 스튜디오</h2>
+      <p>수업 예약 5단계와 관리자 요금 일괄 변경.</p>
+      <ul><li>예약 → 가상 결제 → 문자 미리보기</li><li>요금 변경 미리보기, 부분 실패 후 재전송</li></ul>
+      <a class="btn" href="a-booking.html">데모 열기</a></section>
+    <section class="card"><span class="tag">매칭 플랫폼 · 다중 역할</span><h2>말끔</h2>
+      <p>견적 요청, 정원제 업체 참여, 구인구직, 운영자 기록.</p>
+      <ul><li>한 계정에서 고객·업체·작업자 전환</li><li>정원 도달 시 자동 마감</li></ul>
+      <a class="btn" href="c-matching.html">데모 열기</a></section>
+    <section class="card"><span class="tag">진단 · 자문 샘플</span><h2>새싹페이 진단 문서</h2>
+      <p>코드 진단 보고서, RFP 검수, 개발사 비교.</p>
+      <ul><li>항목 선택 시 공수·견적 재계산</li><li>가중치에 따라 개발사 순위 변경</li></ul>
+      <a class="btn" href="f-samples.html">데모 열기</a></section>
+  </div>
+  <footer>데이터는 클라우드 DB에 저장됩니다. DB에 연결되지 않으면 브라우저 메모리 모드로 자동 전환됩니다.</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,6 @@
+# 서버(VPS)에서: IMAGE_TAG=v1.0.0 docker compose up -d   /  되돌리기: IMAGE_TAG=v0.9.0 docker compose up -d
+services:
+  web:
+    image: ghcr.io/OWNER/REPO:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports: ["8080:80"]

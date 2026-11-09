@@ -1,0 +1,17 @@
+const {chromium}=require('playwright');
+const bad=[];const _l=console.log;console.log=(...a)=>{_l(...a);if(a.some(x=>x===false))bad.push(String(a[0]))};
+(async()=>{const b=await chromium.launch();const p=await b.newPage();const errs=[];
+p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>m.type()==='error'&&!/Failed to load resource/.test(m.text())&&errs.push(m.text()));
+await p.goto('file://'+process.argv[2]);await p.waitForTimeout(300);
+await p.click('[data-act=pickcls]');await p.click('[data-act=next]');
+await p.click('[data-act=pickdate]');await p.locator('[data-act=pickslot]:not([disabled])').first().click();await p.click('[data-act=next]');
+await p.fill('#in-name','테스트');await p.fill('#in-phone','010-1234-5678');await p.click('[data-act=next]');
+await p.click('[data-act=pay]');
+console.log('done:',(await p.textContent('#app')).includes('예약번호'));
+await p.click('[data-act=view][data-v=admin]');
+console.log('rows:',await p.locator('tbody tr').count());
+await p.click('[data-act=tab][data-t=rates]');await p.click('[data-act=rapply]');
+console.log('fail shown:',(await p.textContent('#app')).includes('전송 실패'));
+await p.click('[data-act=rretry]');console.log('retry ok:',(await p.textContent('#app')).includes('반영 완료'));
+await p.click('[data-act=tab][data-t=sms]');console.log('sms:',(await p.textContent('#app')).includes('예약이 확정'));
+console.log('errors:',errs);await b.close();if(errs.length||bad.length){console.error('FAIL',errs,bad);process.exit(1)}})();

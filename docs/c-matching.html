@@ -1,0 +1,343 @@
+<title>청소 매칭 플랫폼 데모</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: 상단 역할 전환 바(고객/업체/작업자/운영자) + 역할별 화면. 견적 하나가 네 역할을 가로질러 흐른다. */
+:root{
+  --bg:#eef2f1; --surface:#ffffff; --fg:#14231f; --muted:#546560; --line:#d3dcd9;
+  --accent:#0d6b5c; --accent-fg:#ffffff; --accent-soft:#d9eeea; --amber:#b25e09; --amber-soft:#fbe9d2;
+  --ok:#1b7a47; --ok-soft:#dcf2e5; --bad:#a3262a; --bad-soft:#f9dfe0; --info:#2b5a8f; --info-soft:#dfeaf7;
+  --font:'Noto Sans KR',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1816; --surface:#17231f; --fg:#e6efec; --muted:#9db1ab; --line:#2a3b36;
+  --accent:#4fd0b8; --accent-fg:#06211b; --accent-soft:#1a3b35; --amber:#f2b36a; --amber-soft:#3b2a12;
+  --ok:#74d69b; --ok-soft:#1b3a2a; --bad:#f19a9d; --bad-soft:#40201f; --info:#8db8ea; --info-soft:#1c3048; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1816; --surface:#17231f; --fg:#e6efec; --muted:#9db1ab; --line:#2a3b36;
+  --accent:#4fd0b8; --accent-fg:#06211b; --accent-soft:#1a3b35; --amber:#f2b36a; --amber-soft:#3b2a12;
+  --ok:#74d69b; --ok-soft:#1b3a2a; --bad:#f19a9d; --bad-soft:#40201f; --info:#8db8ea; --info-soft:#1c3048; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.6;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:1000px;margin:0 auto}
+.notice{background:var(--amber-soft);color:var(--amber);border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin-top:16px;font-size:13px}
+header{padding:18px 0 10px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-end}
+.logo{font-weight:900;font-size:24px;letter-spacing:-.02em}
+.logo small{display:block;font-weight:400;font-size:12px;color:var(--muted);letter-spacing:0}
+.roles{display:flex;flex-wrap:wrap;gap:6px}
+.roles button{border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:8px 14px;border-radius:99px;font:inherit;cursor:pointer}
+.roles button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:700}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.acct{font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:16px}
+.acct b{color:var(--fg)}
+h2{font-size:20px;margin:0 0 4px;letter-spacing:-.01em} h3{font-size:16px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.meta{color:var(--muted);font-size:13px}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;font-weight:700;margin-right:4px}
+.tag.ok{background:var(--ok-soft);color:var(--ok)} .tag.amber{background:var(--amber-soft);color:var(--amber)} .tag.bad{background:var(--bad-soft);color:var(--bad)} .tag.info{background:var(--info-soft);color:var(--info)} .tag.mute{background:var(--accent-soft);color:var(--accent)}
+label.f{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+input[type=text],input[type=number],select,textarea{width:100%;max-width:460px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit}
+textarea{min-height:76px;resize:vertical}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:9px 16px;border-radius:8px;font:inherit;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:700}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.bar{height:8px;border-radius:99px;background:var(--accent-soft);overflow:hidden;margin:8px 0 2px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.err{color:var(--bad);font-size:13px;min-height:20px;margin:6px 0 0}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle}
+th{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.03em}
+tr:last-child td{border-bottom:0}
+.sec{margin-top:24px}
+.tl{list-style:none;margin:8px 0 0;padding:0 0 0 14px;border-left:2px solid var(--line);display:grid;gap:8px}
+.tl li{font-size:13px;color:var(--muted)}
+.note{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--info);padding:10px 14px;border-radius:6px;color:var(--muted);font-size:13px;margin-top:16px}
+.lock{filter:blur(4px);user-select:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:20;max-width:90%}
+@media (prefers-reduced-motion:no-preference){.btn,.roles button{transition:background .15s,border-color .15s}}
+</style>
+
+<div class="wrap">
+  <div class="notice" role="note">컨셉 데모입니다. 가상 서비스와 가상 데이터로 만든 포트폴리오용 프로토타입이며 알림톡, 로그인, 결제는 실제로 동작하지 않습니다.</div>
+  <header>
+    <div class="logo">말끔<small>청소 견적 · 인력 연결 플랫폼</small></div>
+    <div class="roles" role="group" aria-label="역할 전환" id="roles"></div>
+  </header>
+  <div class="acct" id="acct"></div>
+  <main id="app"></main>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+window.APP_CONFIG={"url": "https://YOUR-PROJECT-REF.supabase.co", "anonKey": "YOUR-ANON-PUBLIC-KEY"};window.APP_VERSION="dev-HEAD";
+
+/* ===== repo.js — 데이터 계층 (UI와 분리) =====
+ * 화면 코드는 Repo 의 list/get/create/update/remove 만 호출합니다.
+ * 저장소는 adapter 로 교체합니다.
+ *   memory   : 가상 데이터(새로고침하면 초기화). DB 설정이 없거나 연결 실패 시 자동 폴백
+ *   supabase : Supabase REST(PostgREST). config.json 의 url/anonKey 가 있을 때 사용
+ * adapter 규약: load(col)->Promise<doc[]>, save(col,id,doc), drop(col,id), clear(col)
+ */
+var Repo=(function(){
+  var COLMAP={when:'when_at'};            /* SQL 예약어 회피: JS 필드 -> DB 컬럼 */
+  var COLREV={when_at:'when'};
+  function snake(k){return k.replace(/[A-Z]/g,function(m){return '_'+m.toLowerCase()})}
+  function camel(k){return k.replace(/_([a-z])/g,function(_,c){return c.toUpperCase()})}
+  function colName(k){return COLMAP[k]||snake(k)}
+  function fieldName(c){return COLREV[c]||camel(c)}
+
+  function memoryAdapter(){
+    var mem={};
+    return {name:'memory',
+      load:function(col){return Promise.resolve((mem[col]||[]).slice())},
+      save:function(col,id,doc){(mem[col]=mem[col]||[]);var i=mem[col].findIndex(function(d){return d.id===id});if(i<0)mem[col].push(doc);else mem[col][i]=doc;return Promise.resolve()},
+      drop:function(col,id){mem[col]=(mem[col]||[]).filter(function(d){return d.id!==id});return Promise.resolve()},
+      clear:function(col){mem[col]=[];return Promise.resolve()}};
+  }
+
+  function supabaseAdapter(cfg,ns){
+    var base=String(cfg.url).replace(/\/$/,'')+'/rest/v1/';
+    var H={apikey:cfg.anonKey,Authorization:'Bearer '+cfg.anonKey,'Content-Type':'application/json'};
+    function tbl(col){return ns+'_'+snake(col)}
+    function toRow(doc){var r={};Object.keys(doc).forEach(function(k){r[colName(k)]=doc[k]});return r}
+    function fromRow(row){var d={};Object.keys(row).forEach(function(c){d[fieldName(c)]=row[c]});return d}
+    function check(res){if(!res.ok)return res.text().then(function(t){throw new Error('HTTP '+res.status+' '+t.slice(0,200))});return res}
+    function ctl(){var c=new AbortController();setTimeout(function(){c.abort()},10000);return c.signal}
+    return {name:'supabase',
+      load:function(col){return fetch(base+tbl(col)+'?select=*&limit=1000',{headers:H,signal:ctl()}).then(check).then(function(r){return r.json()}).then(function(rows){return rows.map(fromRow)})},
+      save:function(col,id,doc){return fetch(base+tbl(col)+'?on_conflict=id',{method:'POST',headers:Object.assign({Prefer:'resolution=merge-duplicates,return=minimal'},H),body:JSON.stringify(toRow(doc)),signal:ctl()}).then(check)},
+      drop:function(col,id){return fetch(base+tbl(col)+'?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:H,signal:ctl()}).then(check)},
+      clear:function(col){return fetch(base+tbl(col)+'?id=not.is.null',{method:'DELETE',headers:H,signal:ctl()}).then(check)}};
+  }
+
+  /* 설정(config.json -> window.APP_CONFIG)이 있으면 Supabase, 없으면 메모리 */
+  function fromConfig(ns){
+    var c=(typeof window!=='undefined'&&window.APP_CONFIG)||{};
+    if(c.url&&c.anonKey&&String(c.url).indexOf('YOUR-')<0)return supabaseAdapter(c,ns);
+    return memoryAdapter();
+  }
+
+  function make(adapter,seed){
+    var cache={},seq={},q=Promise.resolve(),fails=0;
+    function now(){return new Date().toISOString()}
+    function persist(fn){q=q.then(fn).catch(function(e){fails++;console.warn('persist failed',e);if(api.onError)api.onError(e)});return q} /* 쓰기를 순서대로 */
+    function nextId(col,prefix,start){seq[col]=Math.max(seq[col]||start,start);
+      var max=(cache[col]||[]).reduce(function(m,d){var n=parseInt(String(d.id).replace(/\D/g,''),10);return n>m?n:m},0);
+      if(max>=seq[col])seq[col]=max+1;
+      var id=prefix+(seq[col]++);
+      if(adapter.name==='supabase')id+='-'+Math.random().toString(36).slice(2,6); /* 동시 방문자 충돌 방지 */
+      return id}
+    function seedAll(){
+      var s=seed();return Promise.all(Object.keys(s).map(function(col){
+        cache[col]=s[col].map(function(d){return Object.assign({createdAt:now(),updatedAt:now()},d)});
+        return Promise.all(cache[col].map(function(d){return adapter.save(col,d.id,d)}))}))}
+    var api={
+      mode:adapter.name,onError:null,
+      init:function(cols){
+        return Promise.all(cols.map(function(col){return adapter.load(col).then(function(rows){cache[col]=rows})}))
+        .then(function(){var empty=cols.every(function(c){return !cache[c].length});if(empty&&seed)return seedAll()})
+        .catch(function(e){ /* DB 연결 실패 -> 메모리로 폴백 */
+          if(adapter.name==='memory')throw e;
+          console.warn('DB 연결 실패, 메모리 모드로 전환',e);
+          adapter=memoryAdapter();api.mode='memory';api.fallback=String(e.message||e);cache={};
+          return api.init(cols)});
+      },
+      /* 모든 컬렉션을 비우고 시드를 다시 넣습니다 */
+      reset:function(cols){
+        return q.then(function(){return Promise.all(cols.map(function(c){return adapter.clear(c)}))}).then(function(){cache={};return seedAll()});
+      },
+      list:function(col,filter){var r=(cache[col]||[]);return (filter?r.filter(filter):r).slice()},
+      get:function(col,id){return (cache[col]||[]).filter(function(d){return d.id===id})[0]||null},
+      create:function(col,doc,prefix,start){var d=Object.assign({},doc);d.id=d.id||nextId(col,prefix||col[0]+'-',start||1);d.createdAt=d.updatedAt=now();(cache[col]=cache[col]||[]).push(d);persist(function(){return adapter.save(col,d.id,d)});return d},
+      update:function(col,id,patch){var d=api.get(col,id);if(!d)return null;Object.assign(d,patch,{updatedAt:now()});persist(function(){return adapter.save(col,id,d)});return d},
+      remove:function(col,id){cache[col]=(cache[col]||[]).filter(function(d){return d.id!==id});persist(function(){return adapter.drop(col,id)})}
+    };
+    return api;
+  }
+
+  /* 화면 하단의 저장소 상태 표시줄 + 데이터 초기화 버튼 */
+  function mountStatus(repo,cols,rerender){
+    var bar=document.createElement('div');
+    bar.setAttribute('role','status');
+    bar.style.cssText='margin:24px auto 0;padding:10px max(16px,env(safe-area-inset-left,0px));display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;font-size:12px;color:var(--muted,#666);border-top:1px solid var(--line,#ddd)';
+    var txt=document.createElement('span');
+    var ver=(typeof window!=='undefined'&&window.APP_VERSION)?' · '+window.APP_VERSION:'';
+    txt.textContent=(repo.mode==='supabase'?'저장소: Supabase DB 연결됨 (방문자 공용 데이터)':'저장소: 브라우저 메모리 (가상 데이터, 새로고침하면 초기화)'+(repo.fallback?' · DB 연결 실패로 전환됨':''))+ver;
+    var b=document.createElement('button');b.type='button';b.textContent='데이터 초기화';
+    b.style.cssText='font:inherit;padding:4px 10px;border:1px solid var(--line,#ccc);border-radius:6px;background:var(--surface,transparent);color:var(--fg,inherit);cursor:pointer';
+    b.onclick=function(){b.disabled=true;b.textContent='초기화 중…';repo.reset(cols).then(function(){b.disabled=false;b.textContent='데이터 초기화';rerender()}).catch(function(e){b.disabled=false;b.textContent='초기화 실패';console.warn(e)})};
+    bar.appendChild(txt);bar.appendChild(b);document.body.appendChild(bar);
+  }
+  return {memoryAdapter:memoryAdapter,supabaseAdapter:supabaseAdapter,fromConfig:fromConfig,make:make,mountStatus:mountStatus,_map:{colName:colName,fieldName:fieldName,snake:snake}};
+})();
+
+/* ===== c-data.js — 스키마 + 가상 시드 =====
+ *  users        {id,name,roles{cust,biz,work},area,days,career}      한 계정에 여러 역할
+ *  companies    {id,name,ownerId,area,status(승인|대기|반려)}
+ *  quotes       {id,type,area,size,date,cap,note,requesterId,status,result}
+ *  quoteJoins   {id,quoteId,companyId}                               견적 참여(정원 계산 근거)
+ *  jobs         {id,title,area,when,pay,need,companyId}
+ *  applications {id,jobId,userId}
+ */
+var COLS=['users','companies','quotes','quoteJoins','jobs','applications'];
+function seedData(){
+  return {
+    users:[
+      {id:'u1',name:'박도현',roles:{cust:true,biz:true,work:true},area:'서울 강남',days:'평일 오전',career:3},
+      {id:'u2',name:'(주)가온 사무실',roles:{cust:true},area:'서울 마포',days:'',career:0},
+      {id:'u3',name:'이서윤',roles:{cust:true},area:'경기 성남',days:'',career:0},
+      {id:'u4',name:'한상원',roles:{cust:true},area:'서울 강남',days:'',career:0},
+      {id:'u5',name:'정민호',roles:{work:true},area:'서울 강남',days:'주말',career:5}
+    ],
+    companies:[
+      {id:'k1',name:'정리의 기술',ownerId:'u6',area:'서울 마포',status:'승인'},
+      {id:'k2',name:'반짝반짝 클린',ownerId:'u7',area:'서울 강남',status:'승인'},
+      {id:'k3',name:'도현 클린팀',ownerId:'u1',area:'서울 강남',status:'승인'},
+      {id:'k4',name:'새빛 청소',ownerId:'u8',area:'경기 성남',status:'대기'}
+    ],
+    quotes:[
+      {id:'Q-201',type:'사무실 정기 청소',area:'서울 마포',size:62,date:'11/12',cap:3,note:'주 2회, 야간 가능',requesterId:'u2',status:'상담 중',result:''},
+      {id:'Q-202',type:'가정집 입주 청소',area:'경기 성남',size:34,date:'11/15',cap:3,note:'새집 증후군 케어 문의',requesterId:'u1',status:'마감',result:''},
+      {id:'Q-203',type:'상가 · 식당 청소',area:'서울 강남',size:48,date:'11/09',cap:2,note:'영업 종료 후 작업',requesterId:'u4',status:'모집 중',result:''}
+    ],
+    quoteJoins:[
+      {id:'QJ-1',quoteId:'Q-201',companyId:'k1'},
+      {id:'QJ-2',quoteId:'Q-202',companyId:'k2'},{id:'QJ-3',quoteId:'Q-202',companyId:'k1'},{id:'QJ-4',quoteId:'Q-202',companyId:'k3'}
+    ],
+    jobs:[
+      {id:'J-31',title:'오피스텔 입주 청소 보조',area:'서울 강남',when:'11/10 09:00',pay:'일 13만원',need:2,companyId:'k2'},
+      {id:'J-32',title:'식당 후드 청소 작업자',area:'경기 고양',when:'11/11 22:00',pay:'일 15만원',need:1,companyId:'k1'}
+    ],
+    applications:[{id:'AP-1',jobId:'J-31',userId:'u5'}]
+  };
+}
+
+
+(function(){
+var $=function(s){return document.querySelector(s)};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function toast(m){var t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(function(){t.hidden=true},2400)}
+var TYPES=['가정집 입주 청소','사무실 정기 청소','상가 · 식당 청소','병원 · 학교 청소','공장 · 창고 청소'];
+var AREAS=['서울 강남','서울 마포','경기 성남','경기 고양','인천 연수'];
+var ROLES=[['cust','고객'],['biz','업체'],['work','작업자'],['admin','운영자']];
+var ME_ID='u1',MY_CO='k3';
+var repo=Repo.make(Repo.fromConfig('c'),seedData);
+var S={role:'cust',form:{type:TYPES[0],area:AREAS[0],size:'',date:'',cap:3,note:'',err:''},jobForm:{title:'',area:AREAS[0],when:'',pay:'',need:2,err:''}};
+function me(){return repo.get('users',ME_ID)}
+function coName(id){var c=repo.get('companies',id);return c?c.name:'-'}
+function joinsOf(qid){return repo.list('quoteJoins',function(x){return x.quoteId===qid})}
+function appsOf(jid){return repo.list('applications',function(x){return x.jobId===jid})}
+function userName(id){var u=repo.get('users',id);return u?u.name:'-'}
+function tagOf(q){return q.status==='모집 중'?'ok':q.status==='마감'?'mute':q.status==='상담 중'?'info':'amber'}
+function quoteCard(q,acts){
+  var n=joinsOf(q.id).length;
+  return '<div class="card"><div><span class="tag '+tagOf(q)+'">'+q.status+'</span><span class="meta">'+q.id+'</span></div>'+
+  '<h3 style="margin-top:6px">'+esc(q.type)+'</h3><div class="meta">'+esc(q.area)+' · '+q.size+'평 · 희망 '+esc(q.date)+'</div>'+
+  '<div class="meta" style="margin-top:4px">'+esc(q.note||'요청사항 없음')+'</div>'+
+  '<div class="bar" aria-hidden="true"><i style="width:'+Math.min(100,n/q.cap*100)+'%"></i></div><div class="meta">참여 업체 '+n+' / '+q.cap+'</div>'+(acts||'')+'</div>'
+}
+function cust(){
+  var f=S.form,h='<h2>견적 요청</h2><p class="sub">한 번 올리면 조건에 맞는 업체에 알림톡이 가고, 정해진 수의 업체만 참여해 상담합니다.</p>';
+  h+='<div class="card"><label class="f" for="f-type">청소 종류</label><select id="f-type" data-k="type">'+TYPES.map(function(t){return '<option'+(t===f.type?' selected':'')+'>'+t+'</option>'}).join('')+'</select>'+
+  '<label class="f" for="f-area">지역</label><select id="f-area" data-k="area">'+AREAS.map(function(t){return '<option'+(t===f.area?' selected':'')+'>'+t+'</option>'}).join('')+'</select>'+
+  '<label class="f" for="f-size">면적 (평)</label><input id="f-size" data-k="size" type="number" min="1" value="'+esc(f.size)+'" placeholder="예: 30">'+
+  '<label class="f" for="f-date">희망 일정</label><input id="f-date" data-k="date" type="text" value="'+esc(f.date)+'" placeholder="예: 11/20 오전">'+
+  '<label class="f" for="f-cap">참여 업체 수 (정원)</label><select id="f-cap" data-k="cap">'+[1,2,3,4,5].map(function(n){return '<option'+(n==f.cap?' selected':'')+'>'+n+'</option>'}).join('')+'</select>'+
+  '<label class="f" for="f-note">상세 조건</label><textarea id="f-note" data-k="note" placeholder="주차, 엘리베이터, 반려동물 등">'+esc(f.note)+'</textarea>'+
+  '<p class="err" role="alert">'+esc(f.err)+'</p><div class="row" style="margin-top:0"><button class="btn primary" data-act="submitq">견적 요청 올리기</button></div></div>';
+  var mine=repo.list('quotes',function(q){return q.requesterId===ME_ID}).map(function(q){
+    var js=joinsOf(q.id);return quoteCard(q,'<ul class="tl">'+(js.length?js.map(function(j){return '<li>'+esc(coName(j.companyId))+' 업체가 참여했습니다 (연락처 공개됨)</li>'}).join(''):'<li>아직 참여한 업체가 없습니다</li>')+'</ul>')}).join('');
+  h+='<div class="sec"><h2>내 견적 현황</h2><div class="grid">'+(mine||'<p class="meta">요청한 견적이 없습니다.</p>')+'</div></div>';
+  return h
+}
+function biz(){
+  var h='<h2>업체 모드: '+esc(coName(MY_CO))+'</h2><p class="sub">조건에 맞는 견적만 알림으로 받고, 정원이 차면 자동으로 마감됩니다. 고객 연락처는 참여한 업체에만 보입니다.</p><div class="grid">';
+  h+=repo.list('quotes').map(function(q){
+    var js=joinsOf(q.id),joined=js.some(function(x){return x.companyId===MY_CO}),full=js.length>=q.cap&&!joined;
+    var act=joined?'<div class="row"><span class="tag ok">참여함</span><span class="meta">고객 연락: 010-****-1234 (가상)</span></div>':
+      '<div class="row"><button class="btn primary" data-act="join" data-id="'+q.id+'" '+(full?'disabled':'')+'>'+(full?'정원 마감':'견적 참여하기')+'</button><span class="meta lock" aria-hidden="true">010-0000-0000</span></div>';
+    return quoteCard(q,act)}).join('')+'</div>';
+  h+='<div class="sec"><h2>작업자 모집 공고</h2><div class="card" style="max-width:520px"><label class="f" for="j-title">공고 제목</label><input id="j-title" data-j="title" type="text" value="'+esc(S.jobForm.title)+'" placeholder="예: 신축 현장 마감 청소">'+
+  '<label class="f" for="j-when">작업 일시</label><input id="j-when" data-j="when" type="text" value="'+esc(S.jobForm.when)+'" placeholder="예: 11/18 08:00">'+
+  '<label class="f" for="j-pay">보수</label><input id="j-pay" data-j="pay" type="text" value="'+esc(S.jobForm.pay)+'" placeholder="예: 일 14만원">'+
+  '<label class="f" for="j-need">모집 인원</label><input id="j-need" data-j="need" type="number" min="1" value="'+S.jobForm.need+'">'+
+  '<p class="err" role="alert">'+esc(S.jobForm.err)+'</p><div class="row" style="margin-top:0"><button class="btn primary" data-act="postjob">공고 올리기</button></div></div></div>';
+  h+='<div class="sec"><h2>내 공고 지원자</h2>'+(repo.list('jobs',function(j){return j.companyId===MY_CO}).map(function(j){var ap=appsOf(j.id);return '<div class="card" style="margin-bottom:8px"><b>'+esc(j.title)+'</b> <span class="meta">'+esc(j.when)+' · '+esc(j.pay)+'</span><div class="meta">지원자 '+ap.length+'명'+(ap.length?': '+ap.map(function(a){return esc(userName(a.userId))}).join(', '):'')+'</div></div>'}).join('')||'<p class="meta">올린 공고가 없습니다.</p>')+'</div>';
+  return h
+}
+function work(){
+  var h='<h2>작업자 모드</h2><p class="sub">같은 계정으로 업체 대표이면서 다른 업체의 현장에도 나갈 수 있습니다. 활동 이력은 한 계정에 모이고 화면에서만 구분됩니다.</p>';
+  h+='<div class="card" style="max-width:520px"><b>내 프로필</b><div class="meta" style="margin-top:4px">활동 지역 '+esc(me().area)+' · 가능 일정 '+esc(me().days)+' · 경력 '+me().career+'년</div></div>';
+  h+='<div class="sec"><h2>구인 목록</h2><div class="grid">'+repo.list('jobs').map(function(j){
+    var ap=appsOf(j.id).some(function(a){return a.userId===ME_ID}),own=j.companyId===MY_CO;
+    return '<div class="card"><h3>'+esc(j.title)+'</h3><div class="meta">'+esc(coName(j.companyId))+' · '+esc(j.area)+'</div><div class="meta">'+esc(j.when)+' · '+esc(j.pay)+' · '+j.need+'명 모집</div>'+
+    '<div class="row">'+(own?'<span class="meta">내 업체 공고입니다</span>':ap?'<span class="tag ok">지원 완료</span>':'<button class="btn primary" data-act="apply" data-id="'+j.id+'">지원하기</button>')+'</div></div>'}).join('')+'</div></div>';
+  h+='<div class="note">직업정보제공사업 표시사항(신고번호 등)은 관리자가 입력하며 구인 목록 하단에 노출됩니다. 법 개정에 대비해 구인자 확인과 허위 구인 관리 기능을 나중에 붙일 수 있는 구조를 전제로 합니다.</div>';
+  return h
+}
+function admin(){
+  var h='<h2>운영자</h2><p class="sub">베타 기간에는 계약 결과와 업체 승인을 운영자가 전화 확인 후 직접 기록합니다.</p>';
+  h+='<div class="tablewrap"><table><thead><tr><th>견적</th><th>유형 · 지역</th><th>참여</th><th>상태</th><th>계약 결과 기록</th></tr></thead><tbody>'+repo.list('quotes').map(function(q){
+    return '<tr><td>'+q.id+'</td><td>'+esc(q.type)+'<div class="meta">'+esc(q.area)+'</div></td><td>'+joinsOf(q.id).length+' / '+q.cap+'</td><td><span class="tag '+tagOf(q)+'">'+q.status+'</span></td><td><select aria-label="'+q.id+' 계약 결과" data-act="result" data-id="'+q.id+'" style="max-width:190px">'+['','상담 진행','계약 완료','계약 불발','청소 완료'].map(function(o){return '<option value="'+o+'"'+(q.result===o?' selected':'')+'>'+(o||'결과 입력')+'</option>'}).join('')+'</select></td></tr>'}).join('')+'</tbody></table></div>';
+  var QS=repo.list('quotes'),done=QS.filter(function(q){return q.result==='계약 완료'||q.result==='청소 완료'}).length;
+  h+='<div class="note">계약 결과 기록 '+QS.filter(function(q){return q.result}).length+'건 · 계약 이상 '+done+'건. 이 데이터가 유료 전환 시점과 다음 개발 범위를 정하는 근거가 됩니다.</div>';
+  var pend=repo.list('companies',function(c){return c.status==='대기'});
+  h+='<div class="sec"><h2>업체 승인 대기</h2>'+(pend.length?pend.map(function(c){return '<div class="card" style="max-width:520px;margin-bottom:8px"><b>'+esc(c.name)+' (가상)</b><div class="meta">사업자등록증 업로드 완료 · 활동지역 '+esc(c.area)+'</div><div class="row"><button class="btn primary" data-act="approve" data-id="'+c.id+'">승인</button><button class="btn danger" data-act="reject" data-id="'+c.id+'">반려</button></div></div>'}).join(''):'<p class="meta">승인 대기 중인 업체가 없습니다.</p>')+'</div>';
+  return h
+}
+function render(){
+  $('#roles').innerHTML=ROLES.map(function(r){return '<button data-act="role" data-r="'+r[0]+'" aria-pressed="'+(S.role===r[0])+'">'+r[1]+'</button>'}).join('');
+  $('#acct').innerHTML='로그인 계정 <b>'+esc(me().name)+'</b> (가상) · 보유 역할: 고객 · 업체 대표 · 작업자 <span class="meta">— 한 계정에서 역할만 바꿉니다</span>';
+  $('#app').innerHTML={cust:cust,biz:biz,work:work,admin:admin}[S.role]();
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-act]');if(!t||t.tagName==='SELECT')return;var a=t.dataset.act;
+  if(a==='role'){S.role=t.dataset.r}
+  else if(a==='submitq'){
+    var f=S.form;
+    if(!(Number(f.size)>0)){f.err='면적을 숫자로 입력해 주세요.';render();return}
+    if(f.date.trim().length<2){f.err='희망 일정을 입력해 주세요.';render();return}
+    repo.create('quotes',{type:f.type,area:f.area,size:Number(f.size),date:f.date.trim(),cap:Number(f.cap),note:f.note.trim(),requesterId:ME_ID,status:'모집 중',result:''},'Q-',204);
+    S.form={type:TYPES[0],area:AREAS[0],size:'',date:'',cap:3,note:'',err:''};
+    toast('견적이 등록되었습니다. 조건에 맞는 업체에 알림톡이 발송됩니다 (가상)')
+  }
+  else if(a==='join'){
+    var q=repo.get('quotes',t.dataset.id),js=joinsOf(q.id);
+    if(js.length<q.cap&&!js.some(function(x){return x.companyId===MY_CO})){repo.create('quoteJoins',{quoteId:q.id,companyId:MY_CO},'QJ-',5);if(js.length+1>=q.cap)repo.update('quotes',q.id,{status:'마감'});toast('견적에 참여했습니다. 고객에게 알림톡이 갑니다 (가상)')}
+  }
+  else if(a==='postjob'){
+    var j=S.jobForm;
+    if(j.title.trim().length<3){j.err='공고 제목을 3자 이상 입력해 주세요.';render();return}
+    if(!j.when.trim()||!j.pay.trim()){j.err='작업 일시와 보수를 입력해 주세요.';render();return}
+    repo.create('jobs',{title:j.title.trim(),area:j.area,when:j.when.trim(),pay:j.pay.trim(),need:Number(j.need)||1,companyId:MY_CO},'J-',33);
+    S.jobForm={title:'',area:AREAS[0],when:'',pay:'',need:2,err:''};toast('구인 공고를 올렸습니다')
+  }
+  else if(a==='apply'){
+    if(!appsOf(t.dataset.id).some(function(a){return a.userId===ME_ID}))repo.create('applications',{jobId:t.dataset.id,userId:ME_ID},'AP-',2);toast('지원했습니다. 업체에 알림톡이 갑니다 (가상)')
+  }
+  else if(a==='approve'){repo.update('companies',t.dataset.id,{status:'승인'});toast(coName(t.dataset.id)+' 업체를 승인했습니다')}
+  else if(a==='reject'){repo.update('companies',t.dataset.id,{status:'반려'});toast('반려 처리했습니다. 실제 서비스에서는 사유 입력이 이어집니다 (데모)')}
+  else return;
+  render();
+});
+document.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.dataset.act==='result'){repo.update('quotes',t.dataset.id,{result:t.value});render();toast('계약 결과를 기록했습니다');return}
+  if(t.dataset.k){S.form[t.dataset.k]=t.value}
+  if(t.dataset.j){S.jobForm[t.dataset.j]=t.value}
+});
+document.addEventListener('input',function(e){
+  var t=e.target;
+  if(t.dataset.k&&t.tagName!=='SELECT')S.form[t.dataset.k]=t.value;
+  if(t.dataset.j)S.jobForm[t.dataset.j]=t.value;
+});
+repo.init(COLS).then(function(){render();Repo.mountStatus(repo,COLS,render)});
+})();
+
+</script>

@@ -1,0 +1,81 @@
+<title>청소 매칭 플랫폼 데모</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: 상단 역할 전환 바(고객/업체/작업자/운영자) + 역할별 화면. 견적 하나가 네 역할을 가로질러 흐른다. */
+:root{
+  --bg:#eef2f1; --surface:#ffffff; --fg:#14231f; --muted:#546560; --line:#d3dcd9;
+  --accent:#0d6b5c; --accent-fg:#ffffff; --accent-soft:#d9eeea; --amber:#b25e09; --amber-soft:#fbe9d2;
+  --ok:#1b7a47; --ok-soft:#dcf2e5; --bad:#a3262a; --bad-soft:#f9dfe0; --info:#2b5a8f; --info-soft:#dfeaf7;
+  --font:'Noto Sans KR',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1816; --surface:#17231f; --fg:#e6efec; --muted:#9db1ab; --line:#2a3b36;
+  --accent:#4fd0b8; --accent-fg:#06211b; --accent-soft:#1a3b35; --amber:#f2b36a; --amber-soft:#3b2a12;
+  --ok:#74d69b; --ok-soft:#1b3a2a; --bad:#f19a9d; --bad-soft:#40201f; --info:#8db8ea; --info-soft:#1c3048; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1816; --surface:#17231f; --fg:#e6efec; --muted:#9db1ab; --line:#2a3b36;
+  --accent:#4fd0b8; --accent-fg:#06211b; --accent-soft:#1a3b35; --amber:#f2b36a; --amber-soft:#3b2a12;
+  --ok:#74d69b; --ok-soft:#1b3a2a; --bad:#f19a9d; --bad-soft:#40201f; --info:#8db8ea; --info-soft:#1c3048; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.6;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:1000px;margin:0 auto}
+.notice{background:var(--amber-soft);color:var(--amber);border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin-top:16px;font-size:13px}
+header{padding:18px 0 10px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-end}
+.logo{font-weight:900;font-size:24px;letter-spacing:-.02em}
+.logo small{display:block;font-weight:400;font-size:12px;color:var(--muted);letter-spacing:0}
+.roles{display:flex;flex-wrap:wrap;gap:6px}
+.roles button{border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:8px 14px;border-radius:99px;font:inherit;cursor:pointer}
+.roles button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:700}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.acct{font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:16px}
+.acct b{color:var(--fg)}
+h2{font-size:20px;margin:0 0 4px;letter-spacing:-.01em} h3{font-size:16px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.meta{color:var(--muted);font-size:13px}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;font-weight:700;margin-right:4px}
+.tag.ok{background:var(--ok-soft);color:var(--ok)} .tag.amber{background:var(--amber-soft);color:var(--amber)} .tag.bad{background:var(--bad-soft);color:var(--bad)} .tag.info{background:var(--info-soft);color:var(--info)} .tag.mute{background:var(--accent-soft);color:var(--accent)}
+label.f{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+input[type=text],input[type=number],select,textarea{width:100%;max-width:460px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit}
+textarea{min-height:76px;resize:vertical}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:9px 16px;border-radius:8px;font:inherit;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:700}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.bar{height:8px;border-radius:99px;background:var(--accent-soft);overflow:hidden;margin:8px 0 2px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.err{color:var(--bad);font-size:13px;min-height:20px;margin:6px 0 0}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle}
+th{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.03em}
+tr:last-child td{border-bottom:0}
+.sec{margin-top:24px}
+.tl{list-style:none;margin:8px 0 0;padding:0 0 0 14px;border-left:2px solid var(--line);display:grid;gap:8px}
+.tl li{font-size:13px;color:var(--muted)}
+.note{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--info);padding:10px 14px;border-radius:6px;color:var(--muted);font-size:13px;margin-top:16px}
+.lock{filter:blur(4px);user-select:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:20;max-width:90%}
+@media (prefers-reduced-motion:no-preference){.btn,.roles button{transition:background .15s,border-color .15s}}
+</style>
+
+<div class="wrap">
+  <div class="notice" role="note">컨셉 데모입니다. 가상 서비스와 가상 데이터로 만든 포트폴리오용 프로토타입이며 알림톡, 로그인, 결제는 실제로 동작하지 않습니다.</div>
+  <header>
+    <div class="logo">말끔<small>청소 견적 · 인력 연결 플랫폼</small></div>
+    <div class="roles" role="group" aria-label="역할 전환" id="roles"></div>
+  </header>
+  <div class="acct" id="acct"></div>
+  <main id="app"></main>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/*@@repo.js@@*/
+/*@@c-data.js@@*/
+/*@@c-app.js@@*/
+</script>

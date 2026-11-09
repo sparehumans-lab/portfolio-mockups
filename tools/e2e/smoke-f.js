@@ -1,0 +1,14 @@
+const {chromium}=require('playwright');
+const bad=[];const _l=console.log;console.log=(...a)=>{_l(...a);if(a.some(x=>x===false))bad.push(String(a[0]))};
+(async()=>{const b=await chromium.launch();const p=await b.newPage();const errs=[];
+p.on('pageerror',e=>errs.push(e.message));
+await p.goto('file://'+process.argv[2]);await p.waitForTimeout(300);
+const t=async()=>await p.textContent('#app');
+const before=(await t()).match(/(\d+(\.\d+)?)인일/)[0];
+await p.locator('[data-act=inc]').nth(4).check();
+console.log('md changed:',before,'->',(await t()).match(/(\d+(\.\d+)?)인일/)[0]);
+await p.click('#t-rfp');await p.locator('[data-act=rfp]').nth(3).check();console.log('rfp:',(await t()).match(/완성도 \d+%/)[0]);
+await p.click('#t-cmp');const top1=(await t()).match(/1(\S+사)/);
+await p.locator('#w-price').fill('50');await p.locator('#w-tech').fill('0');
+console.log('rank after:',(await p.locator('.rank .r span').first().textContent()));
+console.log('errors:',errs);await b.close();if(errs.length||bad.length){console.error('FAIL',errs,bad);process.exit(1)}})();
